@@ -7,4 +7,7 @@
   <Subreddit blacklisted="false" LinkBlacklisted="false" Desctiption="An atheist forum">/r/atheism</Subreddit>
   <Subreddit blacklisted="false" LinkBlacklisted="false" Description="wow much subreddit">/r/doge</Subreddit>
   <Subreddit blacklisted="false" LinkBlacklisted="false" Description="News from the world around">/r/worldnews</Subreddit>
+
+  <Subreddit blacklisted="true" LinkBlacklisted="false">/r/politics</Subreddit>
+  <Subreddit blacklisted="true" LinkBlacklisted="true">/r/politicbot</Subreddit>
 </settings>

@@ -19,80 +19,101 @@ namespace SubredditLinkerBot
             
             // Connecting the bot
             Reddit R = new Reddit(); 
-            Console.WriteLine("Logging...");
+            Misc.Log("Logging...");
             var User = R.LogIn("SubredditLinkBot", "BotBot30");
-            Console.WriteLine("Logged!");
+            Misc.Log("Logged!");
             
             var all = R.RSlashAll;
             //var all = R.GetSubreddit("/r/bottest");
-            Console.WriteLine("Got the subreddits!\nNow parsing ...");
+            Misc.Log("Got the subreddits!\n\tNow parsing ...");
 
             while (true) // THE BOT SHALL NEVER STOP MUAHAHAHAHAHAHAHA
             {
-                foreach (var post in all.New.Take(50))
+                try
                 {
-                    try
+                    string curID = "";
+                    
+                    foreach (var post in all.New.Take(50))
                     {
-                        if (IDs.Any(x => x == post.Id)) continue; // If post already parsed, skip it
-                        IDs.Add(post.Id); // Add to the list of parsed posts
-                        File.AppendAllLines("IDs.cfg", new string[] { post.Id }); // Same, but file-based, for not loosing info :P
-
-                        // Parse for subreddits and "Xposts" in titles
-                        var reg = new Regex(@"\/r\/\w+", RegexOptions.IgnoreCase);
-                        bool xposted = new Regex("(x.?post|cross.?posted)", RegexOptions.IgnoreCase).IsMatch(post.Title);
-                        StringBuilder sb = new StringBuilder();
-
-                        Console.WriteLine(post.Title);
-                        if (!reg.IsMatch(post.Title)) continue; // Stop here if nothing is found
-
-                        switch (xposted)
+                        try
                         {
-                            case true:
-                                sb.AppendLine("This is where the post was Xpost'd:\n"); break;
-                            case false:
-                                sb.AppendLine("This is a link to the post's subreddit for the lazy:\n"); break;
-                        }
-                        Console.WriteLine("\t Xposted: {0}", xposted);
+                            curID = post.Id;
+                            
+                            if (IDs.Any(x => x == curID)) continue; // If post already parsed, skip it
+                            IDs.Add(curID); // Add to the list of parsed posts
+                            
+                            File.AppendAllLines("IDs.cfg", new string[] { post.Id }); // Same, but file-based, for not loosing info :P
 
-                        foreach (Match m in reg.Matches(post.Title))
-                        {
-                            bool hasDesc = Settings.Descriptions.Any(x => x.Key.ToLowerInvariant() == m.Value.ToLowerInvariant()); // Chack if description is defined
+                            // Do not process blacklisted subreddits' posts !
+                            if(Settings.SubredditBlacklist.Any(x => x.ToLowerInvariant() == post.Subreddit.ToLowerInvariant())) continue;
 
-                            switch (hasDesc)
+                            // Parse for subreddits and "Xposts" in titles
+                            var reg = new Regex(@"[^a-zA-z0-9]r\/\w+", RegexOptions.IgnoreCase);
+                            var reg2 = new Regex(@"\/r\/w+", RegexOptions.IgnoreCase);
+                            bool xposted = new Regex("(x.?post|cross.?posted)", RegexOptions.IgnoreCase).IsMatch(post.Title);
+                            StringBuilder sb = new StringBuilder();
+
+                            Misc.Log("({1}) - {0}", post.Title, post.Id);
+                            if (!reg.IsMatch(post.Title)) continue; // Stop here if nothing is found
+
+                            switch (xposted)
                             {
                                 case true:
-                                    string desc = Settings.Descriptions[m.Value];
-                                    sb.AppendLine(string.Format("{0}: {1}", m.Value.ToLower(), desc));
-                                    break;
+                                    sb.AppendLine("This is where the post was Xpost'd:\n"); break;
                                 case false:
-                                    sb.AppendLine(m.Value.ToLower());
-                                    break;
+                                    sb.AppendLine("This is a link to the post's subreddit for the lazy:\n"); break;
                             }
-                            Console.WriteLine("\t Parsed: {0}", m.Value);
+                            Console.WriteLine("\tXposted: {0}", xposted);
+
+                            foreach (Match m in reg.Matches(post.Title))
+                            {
+                                bool hasDesc = Settings.Descriptions.Any(x => x.Key.ToLowerInvariant() == m.Value.ToLowerInvariant().Trim()); // Chack if description is defined
+                                string sub = m.Value.Trim().StartsWith("/") ? m.Value.ToLower() : "/" + m.Value.ToLower();
+
+                                // Only post for allowed subreddits!
+                                if (Settings.LinkSubBlacklist.Any(x => x == sub)) continue;
+
+                                switch (hasDesc)
+                                {
+                                    case true:
+                                        string desc = Settings.Descriptions[m.Value];
+                                        sb.AppendLine(string.Format("{0}: {1}", sub, desc));
+                                        break;
+                                    case false:
+                                        sb.AppendLine(sub);
+                                        break;
+                                }
+                                Console.WriteLine("\t Parsed: {0}", sub);
+                            }
+
+                            // Append footer
+                            sb.AppendLine(" * * * \n" +
+                                          "*I'm a bot.* - [FAQ](https://github.com/SolarLiner/Subreddit-Linker-Bot#subreddit-linker-bot) | " +
+                                          "[Source](https://github.com/SolarLiner/Subreddit-Linker-Bot)");
+
+                            try { post.Comment(sb.ToString()); }
+                            catch (RateLimitException re)
+                            {
+                                Misc.Log(" ---- WHOOPS! BEEN BLOCKED BY REDDIT ---- ");
+                                Misc.Log("      Let's wait {0} minute{1} ...", Math.Ceiling(re.TimeToReset.TotalMinutes), re.TimeToReset.TotalMinutes > 1 ? "s" : "");
+                                System.Threading.Thread.Sleep(re.TimeToReset);
+                                Misc.Log("The nap felt good, restarting now ...");
+                                System.Threading.Thread.Sleep(1500);
+                            }
+
+                            sb.AppendLine("-------------------------------------\n\n");
+                            File.AppendAllText("posting.log", sb.ToString()); // Add to log
+
+                            System.Threading.Thread.Sleep(350); // Let him not work too hard lol
                         }
-
-                        // Append footer
-                        sb.AppendLine(" * * * \n" +
-                                      "*I'm a bot.* - [FAQ](https://github.com/SolarLiner/Subreddit-Linker-Bot#subreddit-linker-bot) | " +
-                                      "[Source](https://github.com/SolarLiner/Subreddit-Linker-Bot) | [Paypal donation link]");
-
-                        try { /*post.Comment(sb.ToString());*/ }
-                        catch (RateLimitException re)
+                        catch (Exception ex)
                         {
-                            Console.WriteLine(" ---- WHOOPS! BEEN BLOCKED BY REDDIT ---- ");
-                            Console.WriteLine("      Let's wait a couple minutes ...");
-                            System.Threading.Thread.Sleep(re.TimeToReset);
-                            Console.WriteLine("The nap felt good, restarting now ...");
-                            System.Threading.Thread.Sleep(1500);
+                            IDs.Remove(curID);
+                            continue;
                         }
-
-                        sb.AppendLine("-------------------------------------\n\n");
-                        File.AppendAllText("posting.log", sb.ToString()); // Add to log
-
-                        System.Threading.Thread.Sleep(350); // Let him not work too hard lol
                     }
-                    catch { continue; }
                 }
+                catch { }
             }
         }
     }

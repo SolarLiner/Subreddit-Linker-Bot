@@ -26,9 +26,9 @@ namespace SubredditLinkerBot
             foreach(XmlNode node in xml.ChildNodes[1].ChildNodes)
             {
                 if (node.Attributes["blacklisted"].Value.ToLowerInvariant() == "true")
-                    subBlack.Add(node.Value);
+                    subBlack.Add(node.InnerText);
                 if (node.Attributes["LinkBlacklisted"].Value.ToLowerInvariant() == "true")
-                    subLinkBlack.Add(node.Value);
+                    subLinkBlack.Add(node.InnerText);
 
                 try
                 {
