@@ -67,8 +67,9 @@ namespace SubredditLinkerBot
 
                             foreach (Match m in reg.Matches(post.Title))
                             {
-                                bool hasDesc = Settings.Descriptions.Any(x => x.Key.ToLowerInvariant() == m.Value.ToLowerInvariant().Trim()); // Chack if description is defined
-                                string sub = m.Value.Trim().StartsWith("/") ? m.Value.ToLower() : "/" + m.Value.ToLower();
+                                bool hasDesc = Settings.Descriptions.Any(x => x.Key.ToLowerInvariant() == m.Value.ToLowerInvariant().Trim()); // Check if description is defined
+                                string sub = m.Value.ToLower().Trim();
+                                sub = sub.StartsWith("/") ? sub : "/" +sub;
 
                                 // Only post for allowed subreddits!
                                 if (Settings.LinkSubBlacklist.Any(x => x == sub)) continue;

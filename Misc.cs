@@ -11,7 +11,7 @@ namespace SubredditLinkerBot
     {
         public static void Log(string text)
         {
-            string result = "[{0:yyy-mm-dd hh:mm:ss}]{1}".Format(DateTime.UtcNow, text);
+            string result = "[{0:yyy-MM-dd hh:mm:ss}]{1}".Format(DateTime.UtcNow, text);
             
             Console.WriteLine(result);
             File.AppendAllText("stdout.log", result);
