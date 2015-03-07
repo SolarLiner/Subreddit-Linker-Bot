@@ -27,7 +27,7 @@ namespace SubredditLinkerBot
             //var all = R.GetSubreddit("/r/bottest");
             Misc.Log("Got the subreddits!\n\tNow parsing ...");
 
-            while (true) // THE BOT SHALL NEVER STOP MUAHAHAHAHAHAHAHA
+            while (1<2) // Deadmau5 to run on the wheel
             {
                 try
                 {
@@ -65,14 +65,18 @@ namespace SubredditLinkerBot
                             }
                             Console.WriteLine("\tXposted: {0}", xposted);
 
+                            List<string> subs = new List<string>(); // array of parsed subs
+
                             foreach (Match m in reg.Matches(post.Title))
                             {
                                 bool hasDesc = Settings.Descriptions.Any(x => x.Key.ToLowerInvariant() == m.Value.ToLowerInvariant().Trim()); // Check if description is defined
                                 string sub = m.Value.ToLower().Trim();
                                 sub = sub.StartsWith("/") ? sub : "/" +sub;
 
-                                // Only post for allowed subreddits!
-                                if (Settings.LinkSubBlacklist.Any(x => x == sub)) continue;
+
+                                if (Settings.LinkSubBlacklist.Any(x => x == sub)) continue; // Only post for allowed subreddits!
+                                if (sub == "/r/"+post.Subreddit.ToLowerInvariant()) continue; // Do not parse post's subreddit !
+                                if (subs.Contains(sub)) continue; // Do not parse same subreddits multiple times !
 
                                 switch (hasDesc)
                                 {
@@ -85,12 +89,17 @@ namespace SubredditLinkerBot
                                         break;
                                 }
                                 Console.WriteLine("\t Parsed: {0}", sub);
+
+                                subs.Add(sub);
                             }
+
+                            if (subs.Count < 1) continue; // Don't wanna post empty comments lol
 
                             // Append footer
                             sb.AppendLine(" * * * \n" +
                                           "*I'm a bot.* - [FAQ](https://github.com/SolarLiner/Subreddit-Linker-Bot#subreddit-linker-bot) | " +
-                                          "[Source](https://github.com/SolarLiner/Subreddit-Linker-Bot)");
+                                          "[Source](https://github.com/SolarLiner/Subreddit-Linker-Bot) | " + 
+                                          "[PayPal Donation](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=V2LJY4HCKW3FE)");
 
                             try { post.Comment(sb.ToString()); }
                             catch (RateLimitException re)
