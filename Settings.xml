@@ -11,4 +11,5 @@
   <Subreddit blacklisted="true" LinkBlacklisted="false">/r/politics</Subreddit>
   <Subreddit blacklisted="true" LinkBlacklisted="true">/r/politicbot</Subreddit>
   <Subreddit blacklisted="true" LinkBlacklisted="true">/r/RemovedComments</Subreddit>
+  <Subreddit blacklisted="true" LinkBlacklisted="false">/r/gcdeletes</Subreddit>
 </settings>
